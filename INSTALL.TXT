@@ -1,0 +1,1 @@
+sudo apt install nvidia-cuda-gdbsudo apt install nvidia-cuda-gdb

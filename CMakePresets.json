@@ -13,7 +13,7 @@
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_CUDA_COMPILER": "/usr/local/cuda/bin/nvcc",
-                "CMAKE_CUDA_ARCHITECTURES": "72;87;89",
+                "CMAKE_CUDA_ARCHITECTURES": "89",
                 "ENABLE_SOME_FLAG": "ON"
             }
         },
@@ -24,7 +24,11 @@
             "description": "Debug build with CUDA",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_CUDA_FLAGS_DEBUG": "-G -O0"
+                "CMAKE_CUDA_FLAGS_DEBUG": "-g -G -O0",
+                "CUDA_NVCC_FLAGS": "-g -G -O0",
+                "CMAKE_CXX_FLAGS_DEBUG": "-g -O0",
+                "CUDA_LAUNCH_BLOCKING": "1",
+                "CUDA_SEPARABLE_COMPILATION": "ON"
             }
         },
         {
@@ -37,6 +41,13 @@
                 "CMAKE_CXX_FLAGS_RELEASE": "-O3",
                 "CMAKE_CUDA_FLAGS_RELEASE": "-O3 -Xptxas -O3 -DNDEBUG"
             }
+        }
+    ],
+    "buildPresets": [
+        {
+        "name": "debug-x64",
+        "configurePreset": "debug-x64",
+        "configuration": "Debug"
         }
     ]
 }

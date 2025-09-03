@@ -1,4 +1,15 @@
 {
+    "cmake.useCMakePresets": "always",
+    "cmake.debugConfig": {
+        "MIMode": "gdb",
+        "cwd": "${workspaceFolder}",
+        "miDebuggerPath": "/usr/local/cuda/bin/cuda-gdb",
+        "stopAtEntry": true,
+        "externalConsole": false,
+        "environment": [
+            { "name": "CUDA_LAUNCH_BLOCKING", "value": "1" }
+        ]
+    },
     "files.associations": {
         "array": "cpp",
         "atomic": "cpp",
