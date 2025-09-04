@@ -1,126 +1,25 @@
+// gemm_simple3.cu
 #include <iostream>
 #include <vector>
 #include <cuda_runtime.h>
+#include "gemm_logic/3_gemm_tiled.cuh"
+#include "gemm_samples.cuh"
 #include "utils.h"
 
-
-
-#define TILE_WIDTH 16
-// Each || is 16x16
+//#define TILE_WIDTH 16
+// Each || is 16x16     //to refactoring
 //
 //   || ||     || || || ||     || || || ||
 //   || ||  X               =  || || || ||
 //   || ||     || || || ||     || || || ||
 
-__global__ void gemm_tiled(const float* A, const float* B, float* C, int M, int N, int K) {
-    __shared__ float tile_A[TILE_WIDTH][TILE_WIDTH]; // גודל טיל עבור A
-    __shared__ float tile_B[TILE_WIDTH][TILE_WIDTH]; // גודל טיל עבור B
-
-    // אינדקסים מקומיים בתוך הבלוק
-    int y = threadIdx.y;
-    int x = threadIdx.x;
-
-    // אינדקסים גלובליים בתוך מטריצת הפלט
-    int row = blockIdx.y * TILE_WIDTH + threadIdx.y;
-    int col = blockIdx.x * TILE_WIDTH + threadIdx.x;
-
-    float sum = 0.0f;
-
-    // כמה צעדים צריך לעבור כדי לכסות את כל K
-    int num_tiles = (K + TILE_WIDTH - 1) / TILE_WIDTH;
-
-    for (int t = 0; t < num_tiles; ++t) 
-    {
-        tile_A[y][x] = 0.0f;
-        tile_B[y][x] = 0.0f;
-    }
-
-    for (int t = 0; t < num_tiles; ++t) 
-    {
-        // אינדקסים פנימיים של האלמנטים מהטיל הנוכחי
-        int a_col = t * TILE_WIDTH + x;
-        int b_row = t * TILE_WIDTH + y;
-
-        // טען ערכים לזיכרון שיתופי עם בדיקת גבולות
-        if(row < M && a_col < K)
-        {
-            int a_cell = row * K + a_col;
-            tile_A[y][x] =  A[a_cell];
-        }
-
-        if(b_row < K && col < N)
-        {
-            int b_cell = b_row * N + col;
-            tile_B[y][x] = B[b_cell];
-        }
-
-        __syncthreads();
-
-        // חישוב חלקי של המכפלה
-        for (int i = 0; i < TILE_WIDTH; ++i) {
-            sum += tile_A[y][i] * tile_B[i][x];
-        }
-
-        __syncthreads();
-    }
-
-    // כתיבת התוצאה הסופית עם בדיקת גבולות
-    if (!(row < M && col < N))
-        return;
-    
-    int c_cell = row * N + col;
-    C[c_cell] = sum;
-    
-}
-
-
 int main() {
-    const int M = 3;
-    const int K = 2;
-    const int N = 4;
+    const gemm::Gemm& data = gemm::basic_sample;
 
-    std::vector<float> h_A = {
-        1, 2,
-        3, 4,
-        5, 6
-    };
+    std::vector<float> h_C = gemm::gemm_tiled_run(data);
 
-    std::vector<float> h_B = {
-        1, 2, 3, 4,
-        5, 6, 7, 8
-    };
-
-    std::vector<float> h_C(M * N, 0.0f);
-
-    float *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, M * K * sizeof(float));
-    cudaMalloc(&d_B, K * N * sizeof(float));
-    cudaMalloc(&d_C, M * N * sizeof(float));
-
-    cudaMemcpy(d_A, h_A.data(), M * K * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B.data(), K * N * sizeof(float), cudaMemcpyHostToDevice);
-
-    dim3 block(TILE_WIDTH, TILE_WIDTH);
-    dim3 grid((N + TILE_WIDTH - 1) / TILE_WIDTH, (M + TILE_WIDTH - 1) / TILE_WIDTH);
-    gemm_tiled<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
-
-    cudaMemcpy(h_C.data(), d_C, M * N * sizeof(float), cudaMemcpyDeviceToHost);
-
-    std::cout << "Result C:" << std::endl;
-    for (int i = 0; i < M; ++i) {
-        for (int j = 0; j < N; ++j)
-            std::cout << h_C[i * N + j] << " ";
-        std::cout << std::endl;
-    }
-
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
-
-    cudaDeviceSynchronize();
-
-    std::cout << "Matrix C = A x B:" << std::endl;
-    utils::print_matrix_preview("C", h_C.data(), M, N);
+    std::cout << "sample3 gemm tiled, Matrix C = A x B:" << std::endl;
+    utils::print_matrix_preview("C", h_C.data(), data.M, data.N);
 
     return 0;
 }
