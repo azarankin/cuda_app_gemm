@@ -102,5 +102,7 @@ int main() {
     utils::print_matrix_preview("C", h_C_dense.data(), M, N);
 
     cudaFree(d_A); cudaFree(d_B); cudaFree(d_C);
+
+    CudaTimer::printAll();
     return 0;
 }

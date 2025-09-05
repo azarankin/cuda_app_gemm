@@ -12,8 +12,17 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
+                "COMPILER_FLAGS": "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers",
+                "COMPILER_DEFENISIONS": "-DNVTX_ENABLE",
                 "CMAKE_CUDA_COMPILER": "/usr/local/cuda/bin/nvcc",
-                "CMAKE_CUDA_ARCHITECTURES": "89",
+                "CMAKE_CUDA_ARCHITECTURES": "72;87;89",
+                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_CUDA_STANDARD": "17",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CUDA_STANDARD_REQUIRED": "ON",
+                "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
+                "PROFILING_OUTPUT_PATH": "${sourceDir}/profilings",
+                "PROFILING_OUTPUT_ARCHIVE_PATH": "${sourceDir}/profilings_archive",
                 "ENABLE_SOME_FLAG": "ON"
             }
         },
@@ -32,14 +41,15 @@
             }
         },
         {
-            "name": "release-x64",
+            "name": "profile-x64",
             "inherits": "base",
-            "displayName": "Release build (O3)",
-            "description": "Release build with CUDA and O3 optimization",
+            "displayName": "Profile build",
+            "description": "Release build with profiling enabled",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS_RELEASE": "-O3",
-                "CMAKE_CUDA_FLAGS_RELEASE": "-O3 -Xptxas -O3 -DNDEBUG"
+                "CMAKE_CUDA_FLAGS_RELEASE": "-O3 -Xptxas -O3 -DNDEBUG",
+                "PROFILING_ENABLED": "ON"
             }
         }
     ],

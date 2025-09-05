@@ -1,1 +1,12 @@
 sudo apt install nvidia-cuda-gdbsudo apt install nvidia-cuda-gdb
+
+
+CUDA Toolkit – כולל nvcc ו־nvToolsExt
+
+CMake 3.18+
+
+libnvToolsExt.so – מגיע עם CUDA
+
+
+#TODO לא לאפשר פרופיילינג ב DEBUG
+# לאפס את תיקיית הפרופיילינג בכל ריענון של ה CMAKE

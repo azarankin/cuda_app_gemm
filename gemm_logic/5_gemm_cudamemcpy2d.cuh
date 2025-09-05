@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include "../gemm_classes.cuh"
+#include "../gemm_profiling.cuh"
 
 namespace gemm
 {
@@ -64,27 +65,41 @@ std::vector<float> gemm_cudamemcpy2d_run(const Gemm& data)
     size_t pitchB = stride_N * sizeof(float);
     size_t pitchC = stride_N * sizeof(float);
 
-    cudaMalloc(&d_A, stride_K * M * sizeof(float));
-    cudaMalloc(&d_B, stride_N * K * sizeof(float));
-    cudaMalloc(&d_C, stride_N * M * sizeof(float));
-    cudaMemset(d_C, 0, stride_N * M * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_A, stride_K * M * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_B, stride_N * K * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_C, stride_N * M * sizeof(float));
+    CUDA_CHECK << cudaMemset(d_C, 0, stride_N * M * sizeof(float));
 
     // Copy compact A to padded device memory efficiently
-    cudaMemcpy2D(d_A, pitchA, h_A.data(), K * sizeof(float), K * sizeof(float), M, cudaMemcpyHostToDevice);
-    cudaMemcpy2D(d_B, pitchB, h_B.data(), N * sizeof(float), N * sizeof(float), K, cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy2D(d_A, pitchA, h_A.data(), K * sizeof(float), K * sizeof(float), M, cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy2D(d_B, pitchB, h_B.data(), N * sizeof(float), N * sizeof(float), K, cudaMemcpyHostToDevice);
 
     dim3 block(TILE_WIDTH, TILE_WIDTH);
     dim3 grid(stride_N / TILE_WIDTH, stride_M / TILE_WIDTH);
+
+
+
+CudaProfiler::BEGIN();
+
+PROFILE_RANGE("5. GEMM cudamemcpy2d kernel", NvtxColor::Blue, 
+
     gemm_cudamemcpy2d_kernel<<<grid, block>>>(d_A, d_B, d_C, M, N, K, stride_K, stride_N);
-    cudaDeviceSynchronize();
+    CUDA_CHECK();
+    //cudaDeviceSynchronize();
+
+); // PROFILE_RANGE
+
+CudaProfiler::END();
+
+
 
     // Copy ROI (M x N) back to compact host array
-    cudaMemcpy2D(h_C_dense.data(), N * sizeof(float),
+    CUDA_CHECK << cudaMemcpy2D(h_C_dense.data(), N * sizeof(float),
                  d_C, pitchC, N * sizeof(float), M, cudaMemcpyDeviceToHost);
 
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
+    CUDA_CHECK << cudaFree(d_A);
+    CUDA_CHECK << cudaFree(d_B);
+    CUDA_CHECK << cudaFree(d_C);
 
     return h_C_dense;
 }

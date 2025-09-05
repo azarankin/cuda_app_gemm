@@ -32,5 +32,6 @@ int main() {
     const int stride_N = roundup(data.N, TILE_WIDTH);
     utils::print_matrix_preview_with_cut("C_ROI", h_C_stride.data(), data.M, data.N, stride_N);
 
+    CudaTimer::printAll();
     return 0;
 }

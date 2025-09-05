@@ -21,5 +21,6 @@ int main() {
     std::cout << "sample3 gemm tiled, Matrix C = A x B:" << std::endl;
     utils::print_matrix_preview("C", h_C.data(), data.M, data.N);
 
+    CudaTimer::printAll();
     return 0;
 }

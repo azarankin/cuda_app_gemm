@@ -2,6 +2,8 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include "../gemm_classes.cuh"
+#include "../gemm_profiling.cuh"
+
 
 namespace gemm
 {
@@ -39,25 +41,37 @@ std::vector<float> gemm_naive_run(const Gemm& data)
     std::vector<float> h_C(M * N, 0.0f);
 
     float *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, M * K * sizeof(float));
-    cudaMalloc(&d_B, K * N * sizeof(float));
-    cudaMalloc(&d_C, M * N * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_A, M * K * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_B, K * N * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_C, M * N * sizeof(float));
 
-    cudaMemcpy(d_A, h_A.data(), M * K * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B.data(), K * N * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy(d_A, h_A.data(), M * K * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy(d_B, h_B.data(), K * N * sizeof(float), cudaMemcpyHostToDevice);
 
     dim3 block(16, 16);//threads
     dim3 grid((N + 15) / 16, (M + 15) / 16);//blocks
 
-    gemm_naive_kernel<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
 
+
+CudaProfiler::BEGIN();
+
+PROFILE_RANGE("2. GEMM naive kernel", NvtxColor::Blue, 
+
+    gemm_naive_kernel<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
+    CUDA_CHECK();
     //cudaDeviceSynchronize();
 
-    cudaMemcpy(h_C.data(), d_C, M * N * sizeof(float), cudaMemcpyDeviceToHost);
+); // PROFILE_RANGE
 
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
+CudaProfiler::END();
+
+
+
+    CUDA_CHECK << cudaMemcpy(h_C.data(), d_C, M * N * sizeof(float), cudaMemcpyDeviceToHost);
+
+    CUDA_CHECK << cudaFree(d_A);
+    CUDA_CHECK << cudaFree(d_B);
+    CUDA_CHECK << cudaFree(d_C);
 
     return h_C;
 }

@@ -2,6 +2,8 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include "../gemm_classes.cuh"
+#include "../gemm_profiling.cuh"
+
 
 namespace gemm
 {
@@ -29,6 +31,8 @@ __global__ void gemm_basic_naive_kernel(const float* A, const float* B, float* C
 
 std::vector<float> gemm_basic_naive_run(const Gemm& data)
 {
+
+    
     const std::vector<float>& h_A = data.h_A;
     const std::vector<float>& h_B = data.h_B;
     const int M = data.M, K = data.K, N = data.N;
@@ -36,23 +40,36 @@ std::vector<float> gemm_basic_naive_run(const Gemm& data)
     std::vector<float> h_C(M * N, 0.0f);
 
     float *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, h_A.size() * sizeof(float));
-    cudaMalloc(&d_B, h_B.size() * sizeof(float));
-    cudaMalloc(&d_C, h_C.size() * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_A, h_A.size() * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_B, h_B.size() * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_C, h_C.size() * sizeof(float));
 
-    cudaMemcpy(d_A, h_A.data(), h_A.size() * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B.data(), h_B.size() * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy(d_A, h_A.data(), h_A.size() * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy(d_B, h_B.data(), h_B.size() * sizeof(float), cudaMemcpyHostToDevice);
 
     dim3 threads(N, M);
-    gemm_basic_naive_kernel<<<1, threads>>>(d_A, d_B, d_C, M, N, K);
 
+
+
+CudaProfiler::BEGIN();
+
+PROFILE_RANGE("1. GEMM basic naive kernel", NvtxColor::Blue, 
+
+    gemm_basic_naive_kernel<<<1, threads>>>(d_A, d_B, d_C, M, N, K);
+    CUDA_CHECK();
     //cudaDeviceSynchronize();
 
-    cudaMemcpy(h_C.data(), d_C, h_C.size() * sizeof(float), cudaMemcpyDeviceToHost);
+); // PROFILE_RANGE
 
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
+CudaProfiler::END();
+
+
+
+    CUDA_CHECK << cudaMemcpy(h_C.data(), d_C, h_C.size() * sizeof(float), cudaMemcpyDeviceToHost);
+
+    CUDA_CHECK << cudaFree(d_A);
+    CUDA_CHECK << cudaFree(d_B);
+    CUDA_CHECK << cudaFree(d_C);
 
     return h_C;
 }

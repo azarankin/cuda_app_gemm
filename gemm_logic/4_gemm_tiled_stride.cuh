@@ -3,6 +3,7 @@
 #include <vector>
 #include <utility>
 #include "../gemm_classes.cuh"
+#include "../gemm_profiling.cuh"
 
 namespace gemm
 {
@@ -103,26 +104,38 @@ std::vector<float> gemm_tiled_stride_run(const Gemm& data_with_stride)
     std::vector<float> h_C_stride(stride_M * stride_N, 0.0f);
 
     float *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, stride_M * stride_K * sizeof(float));
-    cudaMalloc(&d_B, stride_K * stride_N * sizeof(float));
-    cudaMalloc(&d_C, stride_M * stride_N * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_A, stride_M * stride_K * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_B, stride_K * stride_N * sizeof(float));
+    CUDA_CHECK << cudaMalloc(&d_C, stride_M * stride_N * sizeof(float));
 
-    cudaMemcpy(d_A, h_A_stride.data(), stride_M * stride_K * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B_stride.data(), stride_K * stride_N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemset(d_C, 0, stride_M * stride_N * sizeof(float));
+    CUDA_CHECK << cudaMemcpy(d_A, h_A_stride.data(), stride_M * stride_K * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemcpy(d_B, h_B_stride.data(), stride_K * stride_N * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK << cudaMemset(d_C, 0, stride_M * stride_N * sizeof(float));
 
     dim3 block(TILE_WIDTH, TILE_WIDTH);
     dim3 grid(stride_N / TILE_WIDTH, stride_M / TILE_WIDTH);
 
+
+
+CudaProfiler::BEGIN();
+
+PROFILE_RANGE("4. GEMM tiled stride kernel", NvtxColor::Blue, 
+
     gemm_tiled_stride_kernel<<<grid, block>>>(d_A, d_B, d_C, M, N, K, stride_K, stride_N, stride_N);
-    
+    CUDA_CHECK();
     //cudaDeviceSynchronize();
 
-    cudaMemcpy(h_C_stride.data(), d_C, stride_M * stride_N * sizeof(float), cudaMemcpyDeviceToHost);
+); // PROFILE_RANGE
 
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
+CudaProfiler::END();
+
+
+
+    CUDA_CHECK << cudaMemcpy(h_C_stride.data(), d_C, stride_M * stride_N * sizeof(float), cudaMemcpyDeviceToHost);
+
+    CUDA_CHECK << cudaFree(d_A);
+    CUDA_CHECK << cudaFree(d_B);
+    CUDA_CHECK << cudaFree(d_C);
 
     return h_C_stride;
 }

@@ -1,2 +1,6 @@
 out/
 build/
+profilings/
+profilings_archive/
+third_party/*
+!third_party/.gitkeep
