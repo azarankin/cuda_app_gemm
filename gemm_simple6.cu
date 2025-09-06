@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <cuda_runtime.h>
-#include "utils.h"
+#include "gemm_utils.h"
 
 #define TILE_WIDTH 16
 

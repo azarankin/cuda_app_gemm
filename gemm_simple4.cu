@@ -5,7 +5,7 @@
 #include <cuda_runtime.h>
 #include "gemm_logic/4_gemm_tiled_stride.cuh"
 #include "gemm_samples.cuh"
-#include "utils.h"
+#include "gemm_utils.h"
 
 //#define TILE_WIDTH 16
 // Each || is 16x16     //to refactoring
@@ -24,8 +24,16 @@ int roundup(int val, int align)
 }
 
 int main() {
-    const gemm::Gemm& data = gemm::basic_sample;
+    const gemm::Gemm& data = gemm::complicated_sample;
+
     gemm::Gemm data_with_stride = gemm::A_B_stride_extend_prepare(data);
+
+
+PROFILE_REPEAT(
+    gemm::gemm_tiled_stride_run(data);
+);
+
+
     std::vector<float> h_C_stride = gemm::gemm_tiled_stride_run(data_with_stride);
 
     std::cout << "sample4 gemm tiled stride, Matrix C = A x B:" << std::endl;

@@ -23,14 +23,16 @@ function(enable_profiling_for_target target_name)
     
 
     # Command to archive old profiling results and create the folders
-    file(MAKE_DIRECTORY ${PROFILING_OUTPUT_ARCHIVE_PATH})
-    add_custom_command(TARGET ${target_name} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo ">> Archiving previous profiling files for ${target_name}..."
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROFILING_OUTPUT_PATH}" "${PROFILING_OUTPUT_ARCHIVE_PATH}"
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${PROFILING_OUTPUT_PATH}"
-        COMMENT "Archiving profiling results"
-    )
     file(MAKE_DIRECTORY ${PROFILING_OUTPUT_PATH})
+
+    add_custom_command(TARGET ${target_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILING_OUTPUT_ARCHIVE_PATH}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROFILING_OUTPUT_PATH}" "${PROFILING_OUTPUT_ARCHIVE_PATH}"
+        COMMENT "Copying all contents from profilings → profilings_archive"
+    )
+    
+    file(MAKE_DIRECTORY ${PROFILING_OUTPUT_ARCHIVE_PATH})
+    
 
     # Target to view profiling
     add_custom_target(view_profile_${target_name}
@@ -44,6 +46,18 @@ function(enable_profiling_for_target target_name)
 endfunction()
 
 
+add_custom_target(archive_profilings
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILING_OUTPUT_PATH}" "${PROFILING_OUTPUT_ARCHIVE_PATH}"
+  COMMAND bash -c "[ -d \"${PROFILING_OUTPUT_PATH}\" ] && ${CMAKE_COMMAND} -E copy_directory \"${PROFILING_OUTPUT_PATH}\" \"${PROFILING_OUTPUT_ARCHIVE_PATH}/latest\" || true"
+  COMMAND bash -c "[ -d \"${PROFILING_OUTPUT_PATH}\" ] && ${CMAKE_COMMAND} -E remove_directory \"${PROFILING_OUTPUT_PATH}\" || true"
+  COMMENT "Archiving profiling results (no TS, overwrite 'latest')"
+  VERBATIM
+)
+
+# דאג שזה ירוץ אחרי כל הבינארים:
+add_dependencies(archive_profilings
+  gemm_simple1 gemm_simple2 gemm_simple3 gemm_simple4 gemm_simple5
+)
 
 
 # CUDA Interface

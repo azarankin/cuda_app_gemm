@@ -7,7 +7,8 @@
 #include <iostream>
 #include <string>
 #include <stack>
-
+#include <unordered_map>
+#include <cstdio>
 
 
 class CudaErrorHandler {
@@ -43,12 +44,23 @@ static const CudaErrorHandler CUDA_CHECK;
 
 
 
-#pragma once
-#include <unordered_map>
-#include <string>
-#include <vector>
-#include <cuda_runtime.h>
-#include <cstdio>
+
+
+
+
+#define PROFILE_REPEAT(STMT)                                \
+    do {                                                    \
+        for (int _pr_i = 0; _pr_i < 5; ++_pr_i) {         \
+            STMT;                                           \
+        }                                                   \
+    } while (0)
+
+
+
+
+
+
+
 
 class CudaTimer {
     struct Timer {
@@ -164,12 +176,12 @@ enum class NvtxColor : uint32_t
         eventAttrib.color = static_cast<uint32_t>(color_enum);     \
         eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;         \
         eventAttrib.message.ascii = name;                          \
-        nvtxRangePushEx(&eventAttrib);                             \
         CudaTimer::begin(name);                                    \
+        nvtxRangePushEx(&eventAttrib);                             \
         __VA_ARGS__;                                               \
-        CudaTimer::end();                                          \
         cudaDeviceSynchronize();                                   \
         nvtxRangePop();                                            \
+        CudaTimer::end();                                          \
     } while (0)
 
     

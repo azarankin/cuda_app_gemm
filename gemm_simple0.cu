@@ -5,11 +5,11 @@
 //#include <cublas_v2.h>
 #include "gemm_logic/0_gemm_cublas.cuh"
 #include "gemm_samples.cuh"
-#include "utils.h"
+#include "gemm_utils.h"
 
 int main() 
 {
-    const gemm::Gemm& data = gemm::basic_sample;
+    const gemm::Gemm& data = gemm::complicated_sample;
 
     std::vector<float> h_C = gemm::gemm_cublas_run(data);
 

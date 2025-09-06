@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include "gemm_logic/3_gemm_tiled.cuh"
 #include "gemm_samples.cuh"
-#include "utils.h"
+#include "gemm_utils.h"
 
 //#define TILE_WIDTH 16
 // Each || is 16x16     //to refactoring
@@ -14,7 +14,12 @@
 //   || ||     || || || ||     || || || ||
 
 int main() {
-    const gemm::Gemm& data = gemm::basic_sample;
+    const gemm::Gemm& data = gemm::complicated_sample;
+
+
+PROFILE_REPEAT(
+    gemm::gemm_tiled_run(data);
+);
 
     std::vector<float> h_C = gemm::gemm_tiled_run(data);
 

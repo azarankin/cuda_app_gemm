@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include "gemm_logic/2_gemm_naive.cuh"
 #include "gemm_samples.cuh"
-#include "utils.h"
+#include "gemm_utils.h"
 
 // sample 2
 //
@@ -14,8 +14,11 @@
 
 int main()
 {
-    const gemm::Gemm& data = gemm::basic_sample;
-
+    const gemm::Gemm& data = gemm::complicated_sample;
+    
+PROFILE_REPEAT(
+    gemm::gemm_naive_run(data);
+);
     std::vector<float> h_C = gemm::gemm_naive_run(data);
 
     std::cout << "sample2 naive gemm, Matrix C = A x B:" << std::endl;
